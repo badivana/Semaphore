@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semaphore Communication</title>
+    <style>
+    /* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #00bcd4, #8e44ad);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 0 20px;
+}
+
+.container {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 10px;
+    padding: 40px;
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+h1 {
+    font-size: 36px;
+    margin-bottom: 30px;
+    color: #fff;
+    font-weight: 700;
+}
+
+label {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #fff;
+    display: block;
+    text-align: left;
+    margin-left: 10px;
+}
+
+input, button {
+    width: 100%;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+input[type="password"] {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+input[type="number"] {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+button {
+    background-color: #00bcd4;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #007c8a;
+}
+
+/* Style for the "Show" button below the password input */
+#toggleVisibility {
+    background-color: transparent;
+    color: #00bcd4;
+    border: 2px solid #00bcd4; /* Add border */
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease, border-color 0.3s ease;
+    width: 100%;
+    margin-top: 10px; /* Adds space below the input field */
+    padding: 10px; /* Adds padding to create space inside the button */
+    border-radius: 5px; /* Rounds the border edges */
+}
+
+#toggleVisibility:hover {
+    color: #007c8a;
+    border-color: #007c8a; /* Change the border color on hover */
+}
+
+/* Output area for the semaphore images */
+.output {
+    margin-top: 30px;
+}
+
+.image-container img {
+    width: 100%;           /* Make images scale to the container width */
+    height: auto;          /* Maintain the image's aspect ratio */
+    max-width: 400px;      /* Limit maximum width */
+    max-height: 400px;     /* Limit maximum height */
+    margin: 10px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    width: 100%;
+    max-width: 100%;      /* Allow the container to take full width */
+    margin: 0 auto;
+}
+
+
+/* Fade in effect */
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.hidden {
+    display: none;
+}
+
+.original-input {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: 20px;
+    color: #fff;
+    word-wrap: break-word;
+}
+
+/* Style for the exit and show input buttons */
+#exitButton, #showInputButton {
+    margin-top: 20px;
+    padding: 15px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+#exitButton {
+    background-color: #e74c3c;
+    transition: background-color 0.3s ease;
+}
+
+#exitButton:hover {
+    background-color: #c0392b;
+}
+
+#showInputButton {
+    background-color: #27ae60;
+    transition: background-color 0.3s ease;
+}
+
+#showInputButton:hover {
+    background-color: #2ecc71;
+}
+
+/* Add a subtle shadow effect on buttons */
+#exitButton, #showInputButton {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Create a subtle bounce animation on load */
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Apply bounce animation to the container */
+.container {
+    animation: bounceIn 1s ease-out;
+}
+
+    </style>
+    
+    
+</head>
+<body>
+    <div class="container">
+        <h1>Semaphore Communication</h1>
+        <form id="semaphoreForm">
+            <label for="inputText">Enter Letters or Numbers:</label>
+            <input type="password" id="inputText" placeholder="Enter text (A-Z, 0-9)" required>
+            <button type="button" id="toggleVisibility">Show</button>
+    
+            <label for="wpm">Enter Words Per Minute (WPM):</label>
+            <input type="number" id="wpm" placeholder="Enter WPM" min="1" required>
+    
+            <button type="submit">Generate Semaphore</button>
+        </form>
+        
+        <div class="output" id="output"></div>
+        
+        <button id="exitButton" class="hidden">Exit</button>
+        <button id="showInputButton" class="hidden">Show Input</button>
+    </div>
+    
+
+    <script>
+        const semaphoreImages = {
+            "A": "images/A.png",
+            "B": "images/B.png",
+            "C": "images/C.png",
+            "D": "images/D.png",
+            "E": "images/E.png",
+            "F": "images/F.png",
+            "G": "images/G.png",
+            "H": "images/H.png",
+            "I": "images/I.png",
+            "J": "images/J.png",
+            "K": "images/K.png",
+            "L": "images/L.png",
+            "M": "images/M.png",
+            "N": "images/N.png",
+            "O": "images/O.png",
+            "P": "images/P.png",
+            "Q": "images/Q.png",
+            "R": "images/R.png",
+            "S": "images/S.png",
+            "T": "images/T.png",
+            "U": "images/U.png",
+            "V": "images/V.png",
+            "W": "images/W.png",
+            "X": "images/X.png",
+            "Y": "images/Y.png",
+            "Z": "images/Z.png",
+            "0": "images/0.png",
+            "1": "images/1.png",
+            "2": "images/2.png",
+            "3": "images/3.png",
+            "4": "images/4.png",
+            "5": "images/5.png",
+            "6": "images/6.png",
+            "7": "images/7.png",
+            "8": "images/8.png",
+            "9": "images/9.png",
+            " ": "images/space.png",
+            "numeric": "images/numeric.png"
+        };
+
+        const form = document.getElementById('semaphoreForm');
+        const outputDiv = document.getElementById('output');
+        const exitButton = document.getElementById('exitButton');
+        const showInputButton = document.getElementById('showInputButton');
+        const inputText = document.getElementById('inputText');
+        const toggleVisibility = document.getElementById('toggleVisibility');
+        let originalInputText = '';
+
+        toggleVisibility.addEventListener('click', function () {
+            if (inputText.type === 'password') {
+                inputText.type = 'text';
+                toggleVisibility.textContent = 'Hide';
+            } else {
+                inputText.type = 'password';
+                toggleVisibility.textContent = 'Show';
+            }
+        });
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const textInput = inputText.value.toUpperCase();
+            originalInputText = textInput;
+            const wpm = parseInt(document.getElementById('wpm').value);
+
+            if (!wpm || wpm <= 0) {
+                alert("Please enter a valid WPM greater than 0.");
+                return;
+            }
+
+            form.classList.add('hidden');
+            outputDiv.innerHTML = `<p>Displaying semaphore signals at ${wpm} WPM:</p>`;
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'image-container';
+            outputDiv.appendChild(imageContainer);
+
+            const delay = (60 / wpm) * 1000;
+            let currentIndex = 0;
+            let inNumericSequence = false;
+
+            function displayNextImage() {
+                if (currentIndex < textInput.length) {
+                    const char = textInput[currentIndex];
+                    imageContainer.innerHTML = '';
+
+                    const isNumber = !isNaN(char) && char !== ' ';
+                    if (isNumber && !inNumericSequence) {
+                        // Start numeric sequence
+                        const img = document.createElement('img');
+                        img.src = semaphoreImages["numeric"];
+                        img.alt = "Numeric Start";
+                        imageContainer.appendChild(img);
+                        inNumericSequence = true;
+                        setTimeout(displayNextImage, delay);
+                        return;
+                    } else if (!isNumber && inNumericSequence) {
+                        // End numeric sequence
+                        const img = document.createElement('img');
+                        img.src = semaphoreImages["numeric"];
+                        img.alt = "Numeric End";
+                        imageContainer.appendChild(img);
+                        inNumericSequence = false;
+                        setTimeout(displayNextImage, delay);
+                        return;
+                    }
+
+                    // Show character
+                    if (semaphoreImages[char]) {
+                        const img = document.createElement('img');
+                        img.src = semaphoreImages[char];
+                        img.alt = char;
+                        imageContainer.appendChild(img);
+                    }
+                    currentIndex++;
+                    setTimeout(displayNextImage, delay);
+                } else {
+                    if (inNumericSequence) {
+                        // End numeric sequence at end of input
+                        const img = document.createElement('img');
+                        img.src = semaphoreImages["numeric"];
+                        img.alt = "Numeric End";
+                        imageContainer.innerHTML = ''; // Ensure only one image shows
+                        imageContainer.appendChild(img);
+                    }
+                    showInputButton.classList.remove('hidden');
+                    exitButton.classList.remove('hidden');
+                }
+            }
+
+            displayNextImage();
+        });
+
+        showInputButton.addEventListener('click', function () {
+            const sentence = document.createElement('p');
+            sentence.textContent = `Original Input: ${originalInputText}`;
+            sentence.classList.add('original-input');
+            outputDiv.appendChild(sentence);
+            showInputButton.classList.add('hidden');
+        });
+
+        exitButton.addEventListener('click', function () {
+            form.classList.remove('hidden');
+            outputDiv.innerHTML = '';
+            exitButton.classList.add('hidden');
+            showInputButton.classList.add('hidden');
+            form.reset();
+        });
+    </script>
+</body>
+</html>
